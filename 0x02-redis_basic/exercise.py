@@ -16,8 +16,7 @@ def count_calls(method: Callable = None) -> Callable:
     def wrapper(self, *args, **kwargs):
         """ Wrapper method """
         self._redis.incr(name)
-        result = method(self, *args, **kwargs)
-        return result
+        return method(self, *args, **kwargs)
 
     return wrapper
 
@@ -27,13 +26,12 @@ def call_history(method: Callable) -> Callable:
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """ Wrapper function """
-        input_str = str(args)
-        self._redis.rpush(method.__qualname__ + ":inputs", input_str)
+        """ Wraper function """
+        input: str = str(args)
+        self._redis.rpush(method.__qualname__ + ":inputs", input)
 
-        output = method(self, *args, **kwargs)
-        output_str = str(output)
-        self._redis.rpush(method.__qualname__ + ":outputs", output_str)
+        output = str(method(self, *args, **kwargs))
+        self._redis.rpush(method.__qualname__ + ":outputs", output)
 
         return output
 
@@ -47,7 +45,7 @@ def replay(func: Callable):
     number_calls = r.get(func_name)
 
     try:
-        number_calls = int(number_calls.decode('utf-8'))
+        number_calls = number_calls.decode('utf-8')
     except Exception:
         number_calls = 0
 
@@ -77,59 +75,51 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
-    @replay
-    @count_calls
     @call_history
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
             Store the cache
+
             Args:
                 data: bring the information to store
+
             Return:
                 Key or number uuid
         """
         key = str(uuid4())
-
         self._redis.set(key, data)
 
         return key
 
+    def get(self, key: str, fn: Callable = None)\
+            -> Union[str, bytes, int, float]:
+        """
+            Store the cache
 
-def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
-    """
-        Retrieve the value from the cache
-        Args:
-            key: Key to retrieve the value
-            fn: Optional function to transform the value
-        Return:
-            Retrieved value
-    """
-    value = self._redis.get(key)
+            Args:
+                data: bring the information to store
 
-    if fn:
-        return fn(value)
+            Return:
+                Key or number uuid
+        """
+        key = self._redit.get(key)
 
-    return value
+        if fn:
+            return fn(key)
 
+        return key
 
-def get_str(self, key: str) -> str:
-    """ Retrieve a string value from the cache """
-    value = self._redis.get(key)
+    def get_str(self, key: str) -> str:
+        """ Parametrized get str """
+        return self._redit.get(key).decode("utf-8")
 
-    if value is not None:
-        return value.decode("utf-8")
-
-    return ""
-
-
-def get_int(self, key: str) -> int:
-    """ Retrieve an integer value from the cache """
-    value = self._redis.get(key)
-
-    if value is not None:
+    def get_int(self, key: str) -> int:
+        """ Parametrized get int """
+        value = self._redis.get(key)
         try:
-            return int(value.decode('utf-8'))
-        except ValueError:
-            pass
+            value = int(value.decode('utf-8'))
+        except Exception:
+            value = 0
 
-    return 0
+        return value
