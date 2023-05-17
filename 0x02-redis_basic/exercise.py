@@ -7,6 +7,7 @@ from typing import Union, Callable
 from functools import wraps
 import redis
 
+
 def count_calls(method: Callable = None) -> Callable:
     """ Decorator count calls """
     name = method.__qualname__
@@ -19,6 +20,7 @@ def count_calls(method: Callable = None) -> Callable:
         return result
 
     return wrapper
+
 
 def call_history(method: Callable) -> Callable:
     """ Decorator call history """
@@ -36,6 +38,7 @@ def call_history(method: Callable) -> Callable:
         return output
 
     return wrapper
+
 
 def replay(func: Callable):
     """ Replay function """
@@ -65,6 +68,7 @@ def replay(func: Callable):
 
         print(f'{func_name}(*{cin}) -> {cout}')
 
+
 class Cache:
     """ Functionality Redis """
 
@@ -85,9 +89,11 @@ class Cache:
                 Key or number uuid
         """
         key = str(uuid4())
+
         self._redis.set(key, data)
 
         return key
+
 
 def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
     """
@@ -105,6 +111,7 @@ def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
 
     return value
 
+
 def get_str(self, key: str) -> str:
     """ Retrieve a string value from the cache """
     value = self._redis.get(key)
@@ -113,6 +120,7 @@ def get_str(self, key: str) -> str:
         return value.decode("utf-8")
 
     return ""
+
 
 def get_int(self, key: str) -> int:
     """ Retrieve an integer value from the cache """
